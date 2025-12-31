@@ -1,6 +1,5 @@
 export const dynamic = "force-dynamic";
 
-
 import { redis } from "@/lib/redis";
 import { nanoid } from "nanoid";
 
@@ -9,6 +8,7 @@ export async function POST(req) {
     const body = await req.json();
     const { content, ttl_seconds, max_views } = body;
 
+   
     if (!content || typeof content !== "string" || content.trim() === "") {
       return new Response(
         JSON.stringify({ error: "content is required" }),
@@ -16,14 +16,20 @@ export async function POST(req) {
       );
     }
 
-    if (ttl_seconds !== undefined && (!Number.isInteger(ttl_seconds) || ttl_seconds < 1)) {
+    if (
+      ttl_seconds !== undefined &&
+      (!Number.isInteger(ttl_seconds) || ttl_seconds < 1)
+    ) {
       return new Response(
         JSON.stringify({ error: "ttl_seconds must be an integer >= 1" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    if (max_views !== undefined && (!Number.isInteger(max_views) || max_views < 1)) {
+    if (
+      max_views !== undefined &&
+      (!Number.isInteger(max_views) || max_views < 1)
+    ) {
       return new Response(
         JSON.stringify({ error: "max_views must be an integer >= 1" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
@@ -42,20 +48,18 @@ export async function POST(req) {
       views_used: 0,
     };
 
-    await redis.set(`paste:${id}`, JSON.stringify(paste));
+   
+    await redis.set(`paste:${id}`, paste);
 
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : req.headers.get("origin") || "http://localhost:3000";
 
-    const origin =
-  req.headers.get("origin") ||
-  process.env.NEXT_PUBLIC_BASE_URL ||
-  "http://localhost:3000";
-
-return new Response(
-  JSON.stringify({
-    id,
-    url: `${origin}/p/${id}`,
-  }),
-
+    return new Response(
+      JSON.stringify({
+        id,
+        url: `${baseUrl}/p/${id}`,
+      }),
       { status: 201, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
