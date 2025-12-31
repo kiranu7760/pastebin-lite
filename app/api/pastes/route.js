@@ -45,11 +45,17 @@ export async function POST(req) {
     await redis.set(`paste:${id}`, JSON.stringify(paste));
 
 
-    return new Response(
-      JSON.stringify({
-        id,
-        url: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/p/${id}`,
-      }),
+    const origin =
+  req.headers.get("origin") ||
+  process.env.NEXT_PUBLIC_BASE_URL ||
+  "http://localhost:3000";
+
+return new Response(
+  JSON.stringify({
+    id,
+    url: `${origin}/p/${id}`,
+  }),
+
       { status: 201, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
