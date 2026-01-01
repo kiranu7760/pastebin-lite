@@ -1,18 +1,8 @@
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
 
 import { redis } from "@/lib/redis";
 
-function getNow(req) {
-  if (process.env.TEST_MODE === "1") {
-    const testNow = req.headers.get("x-test-now-ms");
-    if (testNow) return Number(testNow);
-  }
-  return Date.now();
-}
-
 export async function GET(req, context) {
-  
   const { id } = await context.params;
 
   const paste = await redis.get(`paste:${id}`);
@@ -24,9 +14,8 @@ export async function GET(req, context) {
     );
   }
 
-  const now = getNow(req);
+  const now = Date.now();
 
-  // TTL check
   if (paste.expires_at && now >= paste.expires_at) {
     await redis.del(`paste:${id}`);
     return new Response(
@@ -35,7 +24,6 @@ export async function GET(req, context) {
     );
   }
 
-  // View limit check
   if (paste.max_views !== null && paste.views_used >= paste.max_views) {
     await redis.del(`paste:${id}`);
     return new Response(
@@ -54,9 +42,7 @@ export async function GET(req, context) {
         paste.max_views !== null
           ? paste.max_views - paste.views_used
           : null,
-      expires_at: paste.expires_at
-        ? new Date(paste.expires_at).toISOString()
-        : null,
+      expires_at: paste.expires_at,
     }),
     { status: 200, headers: { "Content-Type": "application/json" } }
   );

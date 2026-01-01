@@ -1,41 +1,30 @@
 export const dynamic = "force-dynamic";
 
-async function fetchPaste(id) {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/pastes/${id}`,
-    { cache: "no-store" }
-  );
+async function getPaste(id) {
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : "http://localhost:3000";
+
+  const res = await fetch(`${baseUrl}/api/pastes/${id}`, {
+    cache: "no-store",
+  });
 
   if (!res.ok) return null;
   return res.json();
 }
 
-export default async function PastePage({ params }) {
-  const { id } = params;
+export default async function PastePage(props) {
+  const { id } = await props.params;
 
-  const data = await fetchPaste(id);
+  const paste = await getPaste(id);
 
-  if (!data) {
-    return (
-      <main style={{ padding: "20px" }}>
-        <h2>Paste not found</h2>
-      </main>
-    );
+  if (!paste) {
+    return <h1>Paste not found</h1>;
   }
 
   return (
-    <main style={{ padding: "20px" }}>
-      <h1>Paste</h1>
-      <pre
-        style={{
-          background: "#f4f4f4",
-          padding: "15px",
-          whiteSpace: "pre-wrap",
-          wordBreak: "break-word",
-        }}
-      >
-        {data.content}
-      </pre>
+    <main style={{ padding: "2rem" }}>
+      <pre>{paste.content}</pre>
     </main>
   );
 }
